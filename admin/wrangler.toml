@@ -1,0 +1,9 @@
+name = "blog-admin-panel"
+compatibility_date = "2026-07-30"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "."
+
+# ========== 环境变量管理说明 ==========
+# 本项目环境变量通过 Cloudflare Dashboard 的「加密变量」管理。
+# 在 Dashboard → blog-admin → Settings → Environment variables 添加变量并勾选 Encrypt。
+# 不要在 wrangler.toml 中定义 [vars]，以免占用变量名导致无法添加加密变量。

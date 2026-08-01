@@ -1,0 +1,67 @@
+<footer id="footer">
+  <div class="footer-cr">
+    <%- theme.copyright && theme.copyright.text ? theme.copyright.text : ('&copy; ' + (new Date().getFullYear()) + ' ' + (config.author || config.title)) %>
+    <% if (theme.copyright && theme.copyright.powered) { %>
+      <div class="footer-powered"><%- theme.copyright.powered %></div>
+    <% } %>
+  </div>
+  <div class="footer-version">v<%- theme.version || '2026.07.31.beta1' %></div>
+</footer>
+
+<!-- 社交联系弹窗 -->
+<div id="contact-modal" class="contact-overlay" style="display:none">
+  <div class="contact-card">
+    <h3 id="contact-modal-title">联系方式</h3>
+    <div class="contact-item" id="contact-email" style="display:flex" onclick="copyContact('<YOUR_ADMIN_EMAIL>',this)">
+      <i class="fa-solid fa-envelope"></i>
+      <span class="contact-val"><YOUR_ADMIN_EMAIL></span>
+      <span class="contact-copy">复制</span>
+    </div>
+    <div class="contact-item" id="contact-wechat" style="display:flex" onclick="copyContact('<YOUR_WECHAT_ID>',this)">
+      <i class="fa-brands fa-weixin"></i>
+      <span class="contact-val"><YOUR_WECHAT_ID></span>
+      <span class="contact-copy">复制</span>
+    </div>
+    <div class="contact-item" id="contact-qq" style="display:flex" onclick="copyContact('<YOUR_QQ_ID>',this)">
+      <i class="fa-brands fa-qq"></i>
+      <span class="contact-val"><YOUR_QQ_ID></span>
+      <span class="contact-copy">复制</span>
+    </div>
+    <button class="btn-close-contact" onclick="hideContactModal()">关闭</button>
+  </div>
+</div>
+
+<script>
+function showContact(type) {
+  var modalEl = document.getElementById('contact-modal');
+  var titleEl = document.getElementById('contact-modal-title');
+  var emailEl = document.getElementById('contact-email');
+  var wechatEl = document.getElementById('contact-wechat');
+  var qqEl = document.getElementById('contact-qq');
+  // 全部隐藏
+  [emailEl, wechatEl, qqEl].forEach(function(el){ el.style.display = 'none'; });
+  // 按类型显示
+  if (type === 'email') { emailEl.style.display = 'flex'; titleEl.textContent = '邮箱'; }
+  else if (type === 'wechat') { wechatEl.style.display = 'flex'; titleEl.textContent = '微信'; }
+  else if (type === 'qq') { qqEl.style.display = 'flex'; titleEl.textContent = 'QQ'; }
+  else { // 无参数时全部显示
+    [emailEl, wechatEl, qqEl].forEach(function(el){ el.style.display = 'flex'; });
+    titleEl.textContent = '联系方式';
+  }
+  modalEl.style.display = 'flex';
+  return false;
+}
+function hideContactModal() {
+  document.getElementById('contact-modal').style.display = 'none';
+}
+function copyContact(text, el) {
+  navigator.clipboard.writeText(text).then(function() {
+    var cp = el.querySelector('.contact-copy');
+    cp.textContent = '已复制!';
+    setTimeout(function(){ cp.textContent = '复制'; }, 1500);
+  });
+}
+document.getElementById('contact-modal').addEventListener('click', function(e) {
+  if (e.target === this) hideContactModal();
+});
+</script>

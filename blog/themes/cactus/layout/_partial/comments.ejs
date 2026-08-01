@@ -1,0 +1,30 @@
+<% if(page.comments && theme.disqus.enabled){ %>
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript><%= __('comments.no_js') %></noscript>
+        </div>
+    </div>
+<% } %>
+<% if(page.comments && theme.utterances.enabled){ %>
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript><%= __('comments.no_js') %></noscript>
+        </div>
+    </div>
+<% } %>
+<% if(page.comments && theme.twikoo.enabled){ %>
+    <div class="blog-post-comments">
+        <div id="tcomment">
+            <noscript><%= __('comments.no_js') %></noscript>
+        </div>
+    </div>
+    <link rel="stylesheet" href="<%= theme.twikoo.css %>">
+    <script src="<%= theme.twikoo.js %>"></script>
+    <script>
+      twikoo.init({
+        envId: '<%= theme.twikoo.envId %>',
+        el: '#tcomment'
+        <% if(theme.twikoo.region){ %>, region: '<%= theme.twikoo.region %>'<% } %>
+      })
+    </script>
+<% } %>

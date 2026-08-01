@@ -1,0 +1,71 @@
+<!-- 关于我 -->
+<section id="about" class="p-note">
+  <% if (config.description) { %>
+    <%- markdown(config.description) %>
+  <% } %>
+  <% if (theme.social_links) { %>
+    <p>
+      <%= __('index.find_me_on') %>
+      <% var nb_links = theme.social_links.length %>
+      <% var i = 0 %>
+      <% for(var {label, icon, link} of theme.social_links) { %>
+        <% var title = label || icon %>
+        <% if (icon == 'mail') { %>
+          <a class="icon u-email" rel="noopener" href="#" onclick="showContact('email');return false" aria-label="<%- title %>" title="<%- title %>">
+            <i class="fa-solid fa-envelope"></i><!--
+      ---></a>
+        <% } else if (icon == 'rss') { %>
+          <a class="icon" target="_blank" rel="noopener" href="<%- link %>" aria-label="<%- title %>" title="<%- title %>">
+            <i class="fa-solid fa-rss"></i>
+          </a>
+        <% } else { %>
+          <% if (link.startsWith('javascript:')) { %>
+            <a class="icon u-url" rel="noopener me" href="#" onclick="showContact('<%= icon %>');return false" aria-label="<%- title %>" title="<%- title %>">
+              <i class="fa-brands fa-<%= icon %>"></i>
+            </a>
+          <% } else { %>
+            <a class="icon u-url" target="_blank" rel="noopener me" href="<%- url_for(link) %>" aria-label="<%- title %>" title="<%- title %>">
+              <i class="fa-brands fa-<%= icon %>"></i>
+            </a>
+          <% } %><!--
+    ---><% } %><!--
+    ---><%= ( nb_links > 0 && i < nb_links-1 ?
+            ( i == nb_links-2 ? ' '+__('index.enum_and')+' '
+            : __('index.enum_comma')+' ' )
+            : '.' ) %>
+        <% i+=1 %>
+      <% } %>
+    </p>
+  <% } %>
+</section>
+
+<!-- ========== 三大分类文章区 ========== -->
+<%
+  var categories = [
+    { name: '项目', slug: 'project', icon: 'fa-solid fa-diagram-project' },
+    { name: '生活', slug: 'life',   icon: 'fa-solid fa-leaf' },
+    { name: '研究', slug: 'research', icon: 'fa-solid fa-flask' }
+  ]
+%>
+
+<% for(var cat of categories) { %>
+  <%
+    var category = site.categories.findOne({name: cat.name})
+    var posts = category ? category.posts.sort('date', 'desc').limit(5).toArray() : []
+  %>
+  <section id="<%= cat.slug %>">
+    <span class="h1"><a href="<%- url_for('/categories/' + cat.slug + '/') %>"><i class="<%= cat.icon %> cat-icon"></i> <%= cat.name %></a></span>
+    <% if (posts.length > 0) { %>
+    <ul class="post-list">
+      <% posts.forEach(function(post) { %>
+      <li class="post-item">
+        <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
+        <span><%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %></span>
+      </li>
+      <% }) %>
+    </ul>
+    <% } else { %>
+    <p class="no-posts">暂无文章</p>
+    <% } %>
+  </section>
+<% } %>

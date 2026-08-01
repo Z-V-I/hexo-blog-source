@@ -1,0 +1,195 @@
+# Hexo Configuration - Cactus Theme
+title: hello，我是zvi
+subtitle: ''
+SEOTitle: hello，我是zvi
+description: >
+  分享项目、生活和研究思考的个人博客。
+author: zvi
+language: zh-CN
+timezone: Asia/Shanghai
+
+# URL
+url: https://blog.zvi.onl
+root: /
+permalink: :year/:month/:day/:title/
+permalink_defaults:
+pretty_urls:
+  trailing_index: true
+  trailing_html: true
+
+# Directory
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+home_dir: /
+skip_render:
+  - admin/**/*
+  - '_hidden/**'
+
+# Writing
+new_post_name: :title.md
+default_layout: post
+titlecase: false
+external_link:
+  enable: true
+  field: site
+  exclude: ''
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+
+# Home page
+index_generator:
+  path: ''
+  per_page: 10
+  order_by: -date
+
+# Category & Tag
+default_category: 生活
+category_map:
+  项目: project
+  生活: life
+  研究: research
+tag_map:
+
+# Archives
+archive_generator:
+  per_page: 20
+  yearly: false
+  monthly: true
+  daily: false
+
+# Date format
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+
+# Pagination
+per_page: 10
+pagination_dir: page
+
+# Theme
+theme: cactus
+
+# Feed (RSS)
+feed:
+  enable: true
+  type: atom
+  path: atom.xml
+  limit: 20
+
+# Sitemap
+sitemap:
+  path: sitemap.xml
+
+# Search
+search:
+  path: search.xml
+
+# Deployment
+deploy:
+  type: ''
+
+# ========== Cactus 主题配置（通过 theme_config 注入） ==========
+theme_config:
+
+  # ---- 版本号（每次部署后更新，用于确认部署成功） ----
+  version: 2026.08.01.beta2
+
+  # ---- 导航菜单（URL 使用英文 slug，显示用中文） ----
+  nav:
+    home: /
+    about: /about/
+    项目: /categories/project/
+    生活: /categories/life/
+    研究: /categories/research/
+
+  # ---- 项目链接（三分类用 category 页面，这里留空） ----
+  projects_url: ''
+
+  # ---- 联系方式（示例占位符，请自行替换） ----
+  social_links:
+    -
+      icon: github
+      link: 'https://github.com/your-github'
+      label: GitHub
+
+  # ---- 首页文章展示 ----
+  posts_overview:
+    show_all_posts: false
+    post_count: 5
+    sort_updated: false
+
+  # ---- 版权 ----
+  copyright:
+    start_year: 2026
+    end_year:
+    text: '© 2026 Zvi. All rights reserved.'
+    powered: 'Powered by <a href="https://hexo.io">Hexo</a> & <a href="https://github.com/prog21/hexo-theme-cactus">Cactus</a> | Icons by <a href="https://fontawesome.com/">Font Awesome</a><br>Comments by <a href="https://twikoo.js.org/">Twikoo</a> | Analytics: Umami, GA, Clarity<br>Built with DeepSeek & CodeBuddy'
+
+  # ---- Logo ----
+  logo:
+    enabled: true
+    width: 60
+    height: 60
+    url: /images/avatar.png
+    gravatar: false
+    grayout: false
+
+  # ---- 图标 ----
+  favicon:
+    desktop:
+      url: /images/favicon.ico
+      gravatar: false
+    android:
+      url: /images/favicon-192x192.png
+      gravatar: false
+    apple:
+      url: /images/apple-touch-icon.png
+      gravatar: false
+
+  # ---- 颜色方案 ----
+  colorscheme: dark
+
+  # ---- 页面宽度 ----
+  page_width: 48
+
+  # ---- RSS ----
+  rss: true
+
+  # ---- 分析 ----
+  umami_analytics:
+    enabled: true
+    id: <YOUR_UMAMI_WEBSITE_ID>
+    host: https://b1.zvi.onl
+    script_name: script.js
+
+  # ---- Google Analytics ----
+  google_analytics:
+    enabled: true
+    id: '<YOUR_GA_ID>'
+
+  # ---- 评论（关闭） ----
+  disqus:
+    enabled: false
+  utterances:
+    enabled: false
+
+  # ---- CDN ----
+  cdn:
+    enable: true
+    font_awesome: https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css
+
+  # ---- Clarity 热力图 ----
+  clarity:
+    id: <YOUR_CLARITY_ID>
+
+  # ---- Twikoo 评论 ----
+  twikoo:
+    enabled: true
+    envId: '<YOUR_TWIKOO_WORKER_URL>'
+    css: 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.css'
+    js: 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js'

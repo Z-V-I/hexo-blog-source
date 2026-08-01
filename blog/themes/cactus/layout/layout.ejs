@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html<%= config.language ? " lang=" + config.language.substring(0, 2) : ""%>>
+<%- partial('_partial/head') %>
+<body class="max-width mx-auto px3 <%- theme.direction -%>">
+    <!-- 右上角配色切换 -->
+    <div class="scheme-switch-top">
+      <label for="color-scheme-switch" class="scheme-label-top">
+        <i class="fa-solid fa-palette"></i>
+        <select id="color-scheme-switch" class="scheme-select-top">
+          <option value="dark">暗黑</option>
+          <option value="classic">茉莉</option>
+          <option value="cloudflare">云端</option>
+          <option value="reference">紫霞</option>
+          <option value="dunhuang">敦煌</option>
+        </select>
+      </label>
+    </div>
+    <% if (is_post()) { %>
+      <%- partial('_partial/post/actions_desktop') %>
+    <% } %>
+    <div class="content index py4 <%= is_home() ? 'h-card' : '' %>">
+        <% if (!is_post()) { %>
+          <%- partial('_partial/header') %>
+        <% } %>
+        <%- body %>
+        <% if (is_post()) { %>
+          <%- partial('_partial/post/actions_mobile') %>
+        <% } %>
+        <%- partial('_partial/footer') %>
+    </div>
+    <%- partial('_partial/styles') %>
+    <%- partial('_partial/scripts') %>
+</body>
+</html>

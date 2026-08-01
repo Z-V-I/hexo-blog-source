@@ -1,0 +1,13 @@
+# Hexo
+blog/node_modules/
+blog/public/
+blog/.deploy_git/
+blog/db.json
+
+# Admin
+admin/node_modules/
+
+# System
+.DS_Store
+Thumbs.db
+*.log
