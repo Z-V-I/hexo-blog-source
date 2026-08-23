@@ -46,11 +46,17 @@ export async function onRequest(context) {
   }
 
   try {
-    const { prompt } = await request.json();
+    const { prompt, mode = 'rewrite' } = await request.json();
     if (!prompt?.trim()) return json({ error: '内容为空' }, 400);
 
     const deepseekKey = env.DEEPSEEK_API_KEY;
     if (!deepseekKey) return json({ error: 'API 密钥未配置，请联系管理员设置 DEEPSEEK_API_KEY' }, 500);
+
+    // mode: rewrite=AI 重写（完全重写）；light=轻微变动（只改排版，文字几乎不变）
+    const isLight = mode === 'light';
+    const systemPrompt = isLight
+      ? '你是一个排版助手。请将用户提供的纯文本内容整理为规范的 Markdown 格式：正确使用标题层级、段落、列表、引用、加粗等 Markdown 语法。要求：1) 保留原文的所有文字内容，几乎不做增删改写 2) 只调整排版和格式，不改变事实、数字、专有名词 3) 不要添加原文没有的内容 4) 直接输出 Markdown，不要任何解释。'
+      : '你是一个专业的博客写作助手。只输出 Markdown 格式的文章，不要任何解释。';
 
     const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -61,10 +67,10 @@ export async function onRequest(context) {
       body: JSON.stringify({
         model: 'deepseek-chat',
         messages: [
-          { role: 'system', content: '你是一个专业的博客写作助手。只输出 Markdown 格式的文章，不要任何解释。' },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.4,
+        temperature: isLight ? 0.1 : 0.4,
         max_tokens: 8000,
       }),
     });
