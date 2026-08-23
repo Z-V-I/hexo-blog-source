@@ -248,6 +248,10 @@ function bindEvents() {
       const parent = tab.parentElement.parentElement;
       const pv = parent.querySelector('.preview-box');
       const sc = parent.querySelector('.source-box');
+      // 从预览切到源码时：把预览区编辑后的 HTML 转回 Markdown，避免内容丢失
+      if (sc && pv && type.includes('source') && !pv.classList.contains('hidden') && pv.innerHTML) {
+        sc.value = htmlToMarkdown(pv.innerHTML);
+      }
       if (pv) pv.classList.toggle('hidden', !type.includes('preview'));
       if (sc) sc.classList.toggle('hidden', !type.includes('source'));
     });
@@ -386,10 +390,84 @@ function renderMarkdown(md) {
   return html;
 }
 
+// 预览区编辑后的 HTML → Markdown（与 renderMarkdown 的标签一一对应）
+// 行内元素（strong/em/code/a）还原为 Markdown 标记，块级元素按行输出
+function inlineToMarkdown(node) {
+  let out = '';
+  node.childNodes.forEach(child => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      out += child.textContent.replace(/\s*\n\s*/g, ' ').trim();
+      return;
+    }
+    if (child.nodeType !== Node.ELEMENT_NODE) return;
+    const tag = child.tagName.toLowerCase();
+    const inner = () => inlineToMarkdown(child);
+    if (tag === 'strong' || tag === 'b') out += '**' + inner() + '**';
+    else if (tag === 'em' || tag === 'i') out += '*' + inner() + '*';
+    else if (tag === 'code') out += '`' + child.textContent.trim() + '`';
+    else if (tag === 'a') out += '[' + inner() + '](' + (child.getAttribute('href') || '') + ')';
+    else if (tag === 'br') out += '\n';
+    else out += inner();
+  });
+  return out.replace(/\s{2,}/g, ' ');
+}
+
+function htmlToMarkdown(html) {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const lines = [];
+  const walk = (node) => {
+    node.childNodes.forEach(child => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const t = child.textContent.replace(/\s*\n\s*/g, ' ').trim();
+        if (t) lines.push(t);
+        return;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+      const tag = child.tagName.toLowerCase();
+      if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4') {
+        const lv = '#'.repeat(Number(tag[1]));
+        const txt = inlineToMarkdown(child).replace(/\s+/g, ' ').trim();
+        if (txt) lines.push(`${lv} ${txt}`);
+      } else if (tag === 'p') {
+        const t = inlineToMarkdown(child).trim();
+        if (t) lines.push(t);
+      } else if (tag === 'ul' || tag === 'ol') {
+        // renderMarkdown 的有序列表渲染为 <ul class="ol">，这里兼容
+        const isOrdered = tag === 'ol' || (child.getAttribute && (child.getAttribute('class') || '').split(' ').includes('ol'));
+        child.querySelectorAll(':scope > li').forEach(li => {
+          const t = inlineToMarkdown(li).trim();
+          if (t) lines.push(isOrdered ? `1. ${t}` : `- ${t}`);
+        });
+      } else if (tag === 'blockquote') {
+        const t = inlineToMarkdown(child).replace(/\s*\n\s*/g, ' ').trim();
+        if (t) lines.push('> ' + t);
+      } else if (tag === 'pre') {
+        const code = child.querySelector('code');
+        const t = code ? code.textContent : child.textContent;
+        lines.push('```\n' + t.replace(/\n$/, '') + '\n```');
+      } else if (tag === 'hr') {
+        lines.push('---');
+      } else {
+        // 其他未知块级：递归
+        const before = lines.length;
+        walk(child);
+        if (lines.length === before) {
+          const t = inlineToMarkdown(child).trim();
+          if (t) lines.push(t);
+        }
+      }
+    });
+  };
+  walk(tmp);
+  return lines.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // ========== AI 三分类 Prompt ==========
 const PROMPTS = {
   '项目': `你是一位技术博客作者。请将以下笔记整理成专业的技术项目介绍。要求：1)标题清晰 2)结构：背景→功能→实现→使用→总结 3)用# ## ###层级 4)代码用反引号 5)语言简洁`,
-  '生活': `你是一位生活博主，风格温暖真诚。请将以下笔记整理成生活分享。要求：1)标题温馨 2)开篇→事件→感受→结尾 3)口语化有感情 4)适当用表情`,
+  '生活': `你是一位冷静克制的叙事编辑。请将以下笔记整理成一篇生活记录。要求：1)整体保持冷静、陈述性的语气，叙事清晰、不拖泥带水 2)事情发展过程（时间、地点、事件经过）用简洁理性的文字概括 3)涉及情感、感受、想法的部分，尽量直接引用作者原话，不要转述或润色 4)结构可采用"事件 / 想法"分离呈现，或按时间顺序叙述、在中间插入感受 5)克制留白，不煽情不刻意温暖，保留作者真实的情绪颗粒 6)标题简洁朴素`,
   '研究': `你是一位AI技术内容专家。请整理成AEO优化问答文章。AEO结构：1)标题用「什么是XXX？」提问式 2)一句话答案 3)核心概念(##小标题) 4)至少3个Q&A(## Q: / A:) 5)总结 6)每个段落简短`,
 };
 
@@ -397,12 +475,18 @@ async function handleConvert(mode) {
   const file = mode === 'new' ? state.selectedFile : state.editSelectedFile;
   if (!file) { toast('请先上传 TXT 文件', 'error'); return; }
   const category = mode === 'new' ? (document.querySelector('input[name="category"]:checked')?.value || '生活') : (document.querySelector('input[name="edit-category"]:checked')?.value || '生活');
+  const convertMode = mode === 'new'
+    ? (document.querySelector('input[name="convert-mode"]:checked')?.value || 'rewrite')
+    : (document.querySelector('input[name="edit-convert-mode"]:checked')?.value || 'rewrite');
   const statusEl = document.getElementById(mode === 'new' ? 'convert-status' : 'edit-convert-status');
-  statusEl.textContent = 'AI 撰写中...'; statusEl.className = 'status-msg loading';
+  statusEl.textContent = convertMode === 'light' ? '排版整理中...' : 'AI 撰写中...';
+  statusEl.className = 'status-msg loading';
   try {
     const txt = await file.text();
-    const prompt = (PROMPTS[category] || PROMPTS['生活']) + '\n\n原始文本：\n' + txt;
-    const data = await api('/api/convert', { method: 'POST', body: JSON.stringify({ prompt }) });
+    const prompt = convertMode === 'light'
+      ? '请将以下纯文本整理为规范的 Markdown 排版，保留原文文字：\n\n' + txt
+      : (PROMPTS[category] || PROMPTS['生活']) + '\n\n原始文本：\n' + txt;
+    const data = await api('/api/convert', { method: 'POST', body: JSON.stringify({ prompt, mode: convertMode }) });
     if (mode === 'new') {
       document.getElementById('preview-content').innerHTML = renderMarkdown(data.markdown || '');
       document.getElementById('source-content').value = data.markdown || '';
@@ -422,7 +506,7 @@ async function handleConvert(mode) {
       document.getElementById('edit-preview-content').classList.remove('hidden');
       document.getElementById('edit-source-content').classList.add('hidden');
     }
-    statusEl.textContent = '完成 ✓'; statusEl.className = 'status-msg success';
+    statusEl.textContent = '完成 ✓（预览可直接点击编辑文字）'; statusEl.className = 'status-msg success';
   } catch (err) { statusEl.textContent = '失败: ' + err.message; statusEl.className = 'status-msg error'; }
 }
 
@@ -430,7 +514,13 @@ async function handlePublish(e) {
   e.preventDefault();
   const category = document.querySelector('input[name="category"]:checked')?.value || '生活';
   const title = document.getElementById('new-title').value.trim();
-  const md = document.getElementById('source-content').value;
+  // 若预览区可见（可编辑模式），先把编辑后的内容同步回源码
+  const pv = document.getElementById('preview-content');
+  const sc = document.getElementById('source-content');
+  if (pv && sc && !pv.classList.contains('hidden') && pv.innerHTML) {
+    sc.value = htmlToMarkdown(pv.innerHTML);
+  }
+  const md = sc.value;
   if (!md) { toast('请先上传文件并让 AI 生成', 'error'); return; }
   const btn = document.getElementById('btn-publish');
   btn.disabled = true; btn.textContent = '发布中...';
@@ -444,7 +534,12 @@ async function handleEditSave(e) {
   e.preventDefault();
   const category = document.querySelector('input[name="edit-category"]:checked')?.value || '生活';
   const title = document.getElementById('edit-title').value.trim();
-  const md = document.getElementById('edit-source-content')?.value;
+  const epv = document.getElementById('edit-preview-content');
+  const esc = document.getElementById('edit-source-content');
+  if (epv && esc && !epv.classList.contains('hidden') && epv.innerHTML) {
+    esc.value = htmlToMarkdown(epv.innerHTML);
+  }
+  const md = esc?.value;
   if (!md) { toast('请上传文件并重新生成', 'error'); return; }
   try {
     await api('/api/posts', { method: 'PUT', body: JSON.stringify({ path: state.editFilePath, title: title || '无标题', category, content: md }) });
