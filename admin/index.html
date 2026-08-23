@@ -150,14 +150,21 @@
               <button type="button" class="btn-text-sm" id="btn-remove-file">移除</button>
             </div>
           </div>
+          <div class="form-group">
+            <label>改写方式</label>
+            <div class="category-select">
+              <label class="radio-card"><input type="radio" name="convert-mode" value="rewrite" checked><i class="fa-solid fa-wand-magic-sparkles radio-icon"></i><span class="radio-label">AI 重写</span><span class="radio-desc">AI 完全重写文章，风格统一</span></label>
+              <label class="radio-card"><input type="radio" name="convert-mode" value="light"><i class="fa-solid fa-align-left radio-icon"></i><span class="radio-label">轻微变动</span><span class="radio-desc">只调整排版，文字几乎不变</span></label>
+            </div>
+          </div>
           <div class="form-group" id="convert-section" style="display:none">
             <button type="button" class="btn-primary" id="btn-convert">🤖 AI 写文章</button>
             <div id="convert-status" class="status-msg"></div>
             <div class="preview-tabs" id="preview-tabs" style="display:none">
-              <button type="button" class="tab active" data-tab="preview">预览</button>
+              <button type="button" class="tab active" data-tab="preview">预览（点击可直接编辑文字）</button>
               <button type="button" class="tab" data-tab="source">源码</button>
             </div>
-            <div id="preview-content" class="preview-box hidden"></div>
+            <div id="preview-content" class="preview-box hidden" contenteditable="true"></div>
             <textarea id="source-content" class="source-box hidden"></textarea>
           </div>
           <div class="form-actions">
@@ -193,14 +200,21 @@
             </div>
             <div id="edit-file-info" class="file-info hidden"><span id="edit-file-name"></span><button type="button" class="btn-text-sm" id="btn-edit-remove-file">移除</button></div>
           </div>
+          <div class="form-group">
+            <label>改写方式</label>
+            <div class="category-select">
+              <label class="radio-card"><input type="radio" name="edit-convert-mode" value="rewrite" checked><i class="fa-solid fa-wand-magic-sparkles radio-icon"></i><span class="radio-label">AI 重写</span><span class="radio-desc">AI 完全重写文章</span></label>
+              <label class="radio-card"><input type="radio" name="edit-convert-mode" value="light"><i class="fa-solid fa-align-left radio-icon"></i><span class="radio-label">轻微变动</span><span class="radio-desc">只调整排版，文字几乎不变</span></label>
+            </div>
+          </div>
           <div id="edit-convert-section" style="display:none">
             <button type="button" class="btn-primary" id="btn-edit-convert">🤖 重新生成</button>
             <div id="edit-convert-status" class="status-msg"></div>
             <div class="preview-tabs" id="edit-preview-tabs" style="display:none">
-              <button type="button" class="tab active" data-tab="edit-preview">预览</button>
+              <button type="button" class="tab active" data-tab="edit-preview">预览（点击可直接编辑文字）</button>
               <button type="button" class="tab" data-tab="edit-source">源码</button>
             </div>
-            <div id="edit-preview-content" class="preview-box hidden" style="margin-top:0"></div>
+            <div id="edit-preview-content" class="preview-box hidden" style="margin-top:0" contenteditable="true"></div>
             <textarea id="edit-source-content" class="source-box hidden"></textarea>
           </div>
           <div class="form-actions">
