@@ -102,20 +102,20 @@ async function listDir(env, dir) {
 // ========== 主处理 ==========
 export async function onRequest(context) {
   const { request, env } = context;
-  if (!(await verifyAuth(env, request))) return json({ error: '未授权' }, 401);
-
-  const method = request.method;
-
   try {
+    if (!(await verifyAuth(env, request))) return json({ error: '未授权' }, 401);
+
+    const method = request.method;
+
     if (method === 'GET') {
       const url = new URL(request.url);
       const filePath = url.searchParams.get('path');
-      if (filePath) return getSingle(env, filePath);
-      return listAll(env);
+      if (filePath) return await getSingle(env, filePath);
+      return await listAll(env);
     }
-    if (method === 'POST') return create(env, request);
-    if (method === 'PUT') return update(env, request);
-    if (method === 'DELETE') return softDelete(env, request);
+    if (method === 'POST') return await create(env, request);
+    if (method === 'PUT') return await update(env, request);
+    if (method === 'DELETE') return await softDelete(env, request);
     return new Response('Method not allowed', { status: 405 });
   } catch (err) {
     return json({ error: err.message }, 500);
