@@ -162,8 +162,8 @@ async function fetchAllConcurrent(env, dir, files, hidden) {
   return result;
 }
 
-// 缓存键（与 listAll 一致）
-const LIST_CACHE_KEY = 'https://admin.zvi.onl/api/posts-list-v2';
+// 缓存键（与 listAll 一致；使用相对路径避免暴露域名）
+const LIST_CACHE_KEY = '/api/posts-list-v2';
 
 async function invalidateCache() {
   try {
