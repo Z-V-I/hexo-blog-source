@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "onl.zvi.admin.app",
+    "sha256_cert_fingerprints": ["DE:A6:19:E4:03:9B:6A:20:5B:62:9F:30:3B:81:F4:DD:47:C8:A1:9B:0C:1D:BE:78:DD:59:05:78:E8:AB:72:D8"]
+  }
+}]
