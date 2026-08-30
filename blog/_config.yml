@@ -9,7 +9,7 @@ language: zh-CN
 timezone: Asia/Shanghai
 
 # URL
-url: https://blog.zvi.onl
+url: https://<YOUR_BLOG_DOMAIN>
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -104,7 +104,7 @@ theme_config:
   version: 2026.08.30.beta1
 
   # ---- 后台地址（加密文章解锁 API 所在） ----
-  admin_url: https://admin.zvi.onl
+  admin_url: https://<YOUR_ADMIN_DOMAIN>
 
   # ---- 导航菜单（URL 使用英文 slug，显示用中文） ----
   nav:
@@ -184,7 +184,7 @@ theme_config:
   umami_analytics:
     enabled: true
     id: <YOUR_UMAMI_WEBSITE_ID>
-    host: https://b1.zvi.onl
+    host: https://<YOUR_UMAMI_HOST>
     script_name: script.js
 
   # ---- Google Analytics ----
