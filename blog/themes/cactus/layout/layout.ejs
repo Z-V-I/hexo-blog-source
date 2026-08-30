@@ -2,7 +2,7 @@
 <html<%= config.language ? " lang=" + config.language.substring(0, 2) : ""%>>
 <%- partial('_partial/head') %>
 <body class="max-width mx-auto px3 <%- theme.direction -%>">
-    <!-- 右上角配色切换 -->
+    <!-- 右上角配色切换 + 全屏控制 -->
     <div class="scheme-switch-top">
       <label for="color-scheme-switch" class="scheme-label-top">
         <i class="fa-solid fa-palette"></i>
@@ -14,6 +14,12 @@
           <option value="dunhuang">敦煌</option>
         </select>
       </label>
+      <button type="button" id="btn-fs-enter" class="scheme-label-top" title="进入全屏" style="border:1px solid rgba(120,120,120,0.2);background:transparent;color:inherit;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+        <i class="fa-solid fa-expand"></i><span>全屏</span>
+      </button>
+      <button type="button" id="btn-fs-exit" class="scheme-label-top" title="退出全屏" style="border:1px solid rgba(120,120,120,0.2);background:transparent;color:inherit;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;display:none;align-items:center;gap:4px">
+        <i class="fa-solid fa-compress"></i><span>退出</span>
+      </button>
     </div>
     <% if (is_post()) { %>
       <%- partial('_partial/post/actions_desktop') %>

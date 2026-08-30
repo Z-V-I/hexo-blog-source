@@ -216,6 +216,19 @@ body {
 .btn-text-sm:hover { text-decoration: underline; }
 .btn-lg { padding: 12px 32px; font-size: 15px; }
 .btn-sm { padding: 6px 16px; font-size: 13px; }
+.preview-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; background: var(--card);
+  border: 1px solid var(--border); border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.preview-toolbar-hint { font-size: 12px; color: var(--text-secondary); }
+.preview-toolbar .btn-secondary { padding: 5px 14px; font-size: 13px; }
+.sync-time {
+  font-size: 12px; color: var(--text-secondary); white-space: nowrap;
+  opacity: 0; transition: opacity .3s;
+}
+.sync-time.show { opacity: 1; }
 .select-sm {
   padding: 8px 12px; border: 1px solid var(--border);
   border-radius: var(--radius-sm); font-family: inherit;
@@ -265,6 +278,13 @@ body {
 .post-item-title.hidden-title { color: var(--text-secondary); text-decoration: line-through; }
 .post-item-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .post-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.post-tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 1px 8px; border-radius: 10px; margin-left: 6px;
+  vertical-align: middle; white-space: nowrap;
+}
+.tag-featured { background: rgba(255,193,7,0.15); color: #b8860b; border: 1px solid rgba(255,193,7,0.4); }
+.tag-locked { background: rgba(142,142,147,0.15); color: var(--text-secondary); border: 1px solid rgba(142,142,147,0.4); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 15px; }
 
 /* ========== Forms ========== */

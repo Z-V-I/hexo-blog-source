@@ -39,6 +39,37 @@
   <% } %>
 </section>
 
+<!-- ========== 精选板块（放最上方） ========== -->
+<%
+  var featuredPosts = site.posts.filter(function(p){ return p.featured; }).sort('date', 'desc').limit(8).toArray()
+  var catClassMap = { '项目':'cat-project', '生活':'cat-life', '研究':'cat-research' }
+  function catOf(post) {
+    if (post.categories && post.categories.length) {
+      return String(post.categories.data[0].name || post.categories.data[0])
+    }
+    return '生活'
+  }
+%>
+<% if (featuredPosts.length > 0) { %>
+  <section id="featured">
+    <span class="h1"><a href="<%- url_for('/featured/') %>"><i class="fa-solid fa-star cat-icon"></i> 精选</a></span>
+    <ul class="post-list">
+      <% featuredPosts.forEach(function(post) { %>
+        <li class="post-item">
+          <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
+          <span>
+            <%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %>
+            <i class="fa-solid fa-star featured-icon" title="精选"></i>
+            <% if (post.locked) { %><i class="fa-solid fa-lock post-lock" title="加密文章"></i><% } %>
+            <% var fc = catOf(post) %>
+            <span class="cat-tag <%= catClassMap[fc] || 'cat-life' %>"><%= fc %></span>
+          </span>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+<% } %>
+
 <!-- ========== 三大分类文章区 ========== -->
 <%
   var categories = [
@@ -60,10 +91,15 @@
       <% posts.forEach(function(post) { %>
       <li class="post-item">
         <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
-        <span><%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %></span>
+        <span>
+          <%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %>
+          <% if (post.locked) { %><i class="fa-solid fa-lock post-lock" title="加密文章"></i><% } %>
+          <% if (post.featured) { %><i class="fa-solid fa-star featured-icon" title="精选"></i><% } %>
+        </span>
       </li>
       <% }) %>
     </ul>
+    <a class="more-link" href="<%- url_for('/categories/' + cat.slug + '/') %>">查看更多 <i class="fa-solid fa-angle-right"></i></a>
     <% } else { %>
     <p class="no-posts">暂无文章</p>
     <% } %>

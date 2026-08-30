@@ -95,11 +95,21 @@
 <script>
 (function(){
   var schemes = {
-    dark:       { name:'暗黑',    bg:'#1d1f21', text:'#c9cacc', link:'#d480aa', accent:'#2bbc8a', meta:'#908d8d', border:'#908d8d', quote:'#ccffb6', codeBg:'#222426' },
-    classic:    { name:'茉莉',    bg:'#fdf6ec', text:'#3a3028', link:'#5b9bd5', accent:'#5b9bd5', meta:'#999999', border:'#c8c0b0', quote:'#5b9bd5', codeBg:'#f5ece0' },
-    cloudflare: { name:'云端',    bg:'#0d0d0d', text:'#e6e6e6', link:'#f6821f', accent:'#f6821f', meta:'#888888', border:'#555555', quote:'#f6821f', codeBg:'#1a1a1a' },
-    reference:  { name:'紫霞',    bg:'#0a0a1a', text:'#d0d0e8', link:'#788cff', accent:'#7c5ce7', meta:'#8888aa', border:'#555555', quote:'#7c5ce7', codeBg:'#101028' },
-    dunhuang:   { name:'敦煌',    bg:'#2a2018', text:'#f5deb2', link:'#3ca081', accent:'#3ca081', meta:'#c0b098', border:'#5a4a38', quote:'#b1302b', codeBg:'#302418' }
+    dark:       { name:'暗黑',    bg:'#1d1f21', text:'#c9cacc', link:'#d480aa', accent:'#2bbc8a', meta:'#908d8d', border:'#908d8d', quote:'#ccffb6', codeBg:'#222426',
+                  tagProj:'#4fe0a8', tagLife:'#5be88a', tagResearch:'#ffc75e', tagFeatured:'#e8b84b', lockBoxBg:'#222426', lockBoxBorder:'#908d8d', lockBoxText:'#c9cacc',
+                  tagProjBg:'rgba(43,188,138,0.18)', tagLifeBg:'rgba(52,199,89,0.18)', tagResearchBg:'rgba(245,166,35,0.18)' },
+    classic:    { name:'茉莉',    bg:'#fdf6ec', text:'#3a3028', link:'#5b9bd5', accent:'#5b9bd5', meta:'#999999', border:'#c8c0b0', quote:'#5b9bd5', codeBg:'#f5ece0',
+                  tagProj:'#c05060', tagLife:'#2a6fa0', tagResearch:'#c05060', tagFeatured:'#d4a017', lockBoxBg:'#f5ece0', lockBoxBorder:'#c8c0b0', lockBoxText:'#3a3028',
+                  tagProjBg:'rgba(232,117,138,0.2)', tagLifeBg:'rgba(91,155,213,0.2)', tagResearchBg:'rgba(232,117,138,0.2)' },
+    cloudflare: { name:'云端',    bg:'#0d0d0d', text:'#e6e6e6', link:'#f6821f', accent:'#f6821f', meta:'#888888', border:'#555555', quote:'#f6821f', codeBg:'#1a1a1a',
+                  tagProj:'#f6821f', tagLife:'#f5a623', tagResearch:'#f6821f', tagFeatured:'#f6b34d', lockBoxBg:'#1a1a1a', lockBoxBorder:'#555555', lockBoxText:'#e6e6e6',
+                  tagProjBg:'rgba(246,130,31,0.18)', tagLifeBg:'rgba(245,166,35,0.18)', tagResearchBg:'rgba(246,130,31,0.18)' },
+    reference:  { name:'紫霞',    bg:'#0a0a1a', text:'#d0d0e8', link:'#788cff', accent:'#7c5ce7', meta:'#8888aa', border:'#555555', quote:'#7c5ce7', codeBg:'#101028',
+                  tagProj:'#788cff', tagLife:'#7c5ce7', tagResearch:'#788cff', tagFeatured:'#e8b84b', lockBoxBg:'#101028', lockBoxBorder:'#555555', lockBoxText:'#d0d0e8',
+                  tagProjBg:'rgba(120,140,255,0.18)', tagLifeBg:'rgba(124,92,231,0.18)', tagResearchBg:'rgba(120,140,255,0.18)' },
+    dunhuang:   { name:'敦煌',    bg:'#2a2018', text:'#f5deb2', link:'#3ca081', accent:'#3ca081', meta:'#c0b098', border:'#5a4a38', quote:'#b1302b', codeBg:'#302418',
+                  tagProj:'#6fd0a8', tagLife:'#e88078', tagResearch:'#6fd0a8', tagFeatured:'#e8b84b', lockBoxBg:'#302418', lockBoxBorder:'#5a4a38', lockBoxText:'#f5deb2',
+                  tagProjBg:'rgba(60,160,129,0.25)', tagLifeBg:'rgba(177,48,43,0.25)', tagResearchBg:'rgba(60,160,129,0.25)' }
   };
 
   var switchEl = document.getElementById('color-scheme-switch');
@@ -114,7 +124,39 @@
       'blockquote { border-left-color:'+s.accent+'!important; color:'+s.quote+'!important; }' +
       '.highlight, pre, code { background-color:'+s.codeBg+'!important; }' +
       'hr { border-color:'+s.border+'!important; }' +
-      '#footer { border-top-color:'+s.border+'!important; }';
+      '#footer { border-top-color:'+s.border+'!important; background-color:'+s.bg+'!important; }' +
+      '.footer-cr, .footer-powered, .footer-version { color:'+s.meta+'!important; }' +
+      /* 分类出处标签（背景/文字/边框都随主题，参考后台文章列表） */
+      '.cat-tag.cat-project { background:'+s.tagProjBg+'!important; color:'+s.tagProj+'!important; border-color:'+s.tagProj+'!important; }' +
+      '.cat-tag.cat-life { background:'+s.tagLifeBg+'!important; color:'+s.tagLife+'!important; border-color:'+s.tagLife+'!important; }' +
+      '.cat-tag.cat-research { background:'+s.tagResearchBg+'!important; color:'+s.tagResearch+'!important; border-color:'+s.tagResearch+'!important; }' +
+      /* 精选星形与标签 */
+      '.featured-icon, .featured-tag { color:'+s.tagFeatured+'!important; }' +
+      '.featured-tag { border-color:'+s.tagFeatured+'!important; background: rgba(255,193,7,0.12)!important; }' +
+      '.locked-tag { color:'+s.meta+'!important; border-color:'+s.border+'!important; background: rgba(128,128,128,0.12)!important; }' +
+      '.post-lock { color:'+s.meta+'!important; }' +
+      /* 加密密码框 */
+      '.post-lock-box { background:'+s.lockBoxBg+'!important; border-color:'+s.lockBoxBorder+'!important; }' +
+      '.post-lock-icon, .post-lock-hint { color:'+s.meta+'!important; }' +
+      '.post-lock-title { color:'+s.text+'!important; }' +
+      '.post-lock-input-row input { background:'+s.bg+'!important; color:'+s.lockBoxText+'!important; border-color:'+s.lockBoxBorder+'!important; }' +
+      '.post-lock-input-row input:focus { border-color:'+s.accent+'!important; }' +
+      '.post-lock-input-row button { background:'+s.accent+'!important; }' +
+      /* 配色切换按钮（背景随主题） */
+      '.scheme-label-top { background:'+s.bg+'!important; border-color:'+s.border+'!important; color:'+s.text+'!important; }' +
+      '.scheme-label-top:hover { background:'+s.codeBg+'!important; border-color:'+s.border+'!important; }' +
+      '.scheme-select-top { background-color:'+s.bg+'!important; color:'+s.text+'!important; }' +
+      '.scheme-select-top option { background-color:'+s.bg+'!important; color:'+s.text+'!important; }' +
+      /* 联系弹窗 */
+      '.contact-overlay { background: rgba(0,0,0,0.5)!important; }' +
+      '.contact-card { background:'+s.bg+'!important; border-color:'+s.border+'!important; }' +
+      '.contact-card h3 { color:'+s.text+'!important; }' +
+      '.contact-item { border-bottom-color:'+s.border+'!important; }' +
+      '.contact-item:hover { background: rgba(128,128,128,0.12)!important; }' +
+      '.contact-val { color:'+s.text+'!important; }' +
+      '.contact-copy { background:'+s.accent+'!important; }' +
+      '.btn-close-contact { border-color:'+s.border+'!important; color:'+s.meta+'!important; }' +
+      '.btn-close-contact:hover { color:'+s.text+'!important; border-color:'+s.text+'!important; }';
     // 茉莉奶白：文章标题粉红
     if (name === 'classic') {
       css += '.post-item a,article h1,.post-title{color:#e8758a!important}';
@@ -149,6 +191,57 @@
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
+</script>
+
+<!-- 全屏切换按钮（进入/退出浏览器全屏） -->
+<script>
+(function(){
+  function fsSupported() {
+    return document.documentElement.requestFullscreen ||
+      document.documentElement.webkitRequestFullscreen ||
+      document.documentElement.mozRequestFullScreen ||
+      document.documentElement.msRequestFullscreen;
+  }
+  function requestFS() {
+    var el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+  }
+  function exitFS() {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+  }
+  function updateBtns() {
+    var fs = document.fullscreenElement || document.webkitFullscreenElement ||
+      document.mozFullScreenElement || document.msFullscreenElement;
+    var enter = document.getElementById('btn-fs-enter');
+    var exit = document.getElementById('btn-fs-exit');
+    if (!enter || !exit) return;
+    if (fs) { enter.style.display = 'none'; exit.style.display = 'inline-flex'; }
+    else { enter.style.display = 'inline-flex'; exit.style.display = 'none'; }
+  }
+  function initFS() {
+    if (!fsSupported()) return;
+    var enter = document.getElementById('btn-fs-enter');
+    var exit = document.getElementById('btn-fs-exit');
+    if (!enter || !exit) return;
+    enter.addEventListener('click', requestFS);
+    exit.addEventListener('click', exitFS);
+    document.addEventListener('fullscreenchange', updateBtns);
+    document.addEventListener('webkitfullscreenchange', updateBtns);
+    document.addEventListener('mozfullscreenchange', updateBtns);
+    document.addEventListener('MSFullscreenChange', updateBtns);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFS);
+  } else {
+    initFS();
+  }
+})();
 </script>
 
 <!-- Disqus Comments -->

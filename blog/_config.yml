@@ -28,6 +28,10 @@ skip_render:
   - admin/**/*
   - '_hidden/**'
 
+# 让 .well-known（隐藏目录）也被复制到 public，供 Android TWA 数字资产链接验证
+include:
+  - '.well-known/*'
+
 # Writing
 new_post_name: :title.md
 default_layout: post
@@ -97,12 +101,16 @@ deploy:
 theme_config:
 
   # ---- 版本号（每次部署后更新，用于确认部署成功） ----
-  version: 2026.08.01.beta2
+  version: 2026.08.30.beta1
+
+  # ---- 后台地址（加密文章解锁 API 所在） ----
+  admin_url: https://admin.zvi.onl
 
   # ---- 导航菜单（URL 使用英文 slug，显示用中文） ----
   nav:
     home: /
     about: /about/
+    精选: /featured/
     项目: /categories/project/
     生活: /categories/life/
     研究: /categories/research/
@@ -110,12 +118,24 @@ theme_config:
   # ---- 项目链接（三分类用 category 页面，这里留空） ----
   projects_url: ''
 
-  # ---- 联系方式（示例占位符，请自行替换） ----
+  # ---- 联系方式（GitHub / 邮箱 / 微信 / QQ） ----
   social_links:
     -
       icon: github
-      link: 'https://github.com/your-github'
+      link: https://github.com/Z-V-I
       label: GitHub
+    -
+      icon: mail
+      link: 'javascript:showContact(&#39;email&#39;)'
+      label: 邮箱
+    -
+      icon: weixin
+      link: 'javascript:showContact(&#39;wechat&#39;)'
+      label: 微信
+    -
+      icon: qq
+      link: 'javascript:showContact(&#39;qq&#39;)'
+      label: QQ
 
   # ---- 首页文章展示 ----
   posts_overview:
@@ -151,8 +171,8 @@ theme_config:
       url: /images/apple-touch-icon.png
       gravatar: false
 
-  # ---- 颜色方案 ----
-  colorscheme: dark
+  # ---- 颜色方案（默认敦煌） ----
+  colorscheme: dunhuang
 
   # ---- 页面宽度 ----
   page_width: 48
@@ -190,6 +210,6 @@ theme_config:
   # ---- Twikoo 评论 ----
   twikoo:
     enabled: true
-    envId: '<YOUR_TWIKOO_WORKER_URL>'
+    envId: 'https://<YOUR_TWIKOO_WORKER_HOST>'
     css: 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.css'
     js: 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js'

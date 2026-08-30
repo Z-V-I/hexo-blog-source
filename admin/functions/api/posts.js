@@ -66,6 +66,8 @@ function parseFrontmatter(md) {
     v = v.replace(/^["']|["']$/g, '');
     if (v.startsWith('[') && v.endsWith(']')) {
       meta[k] = v.slice(1, -1).split(',').map(s => s.trim().replace(/^["']|["']$/g, ''));
+    } else if (/^(true|false)$/i.test(v)) {
+      meta[k] = v.toLowerCase() === 'true';
     } else {
       meta[k] = v;
     }
@@ -73,11 +75,15 @@ function parseFrontmatter(md) {
   return { meta, content: m[2].trim() };
 }
 
-function buildFrontmatter({ title, date, category }) {
+function buildFrontmatter({ title, date, category, featured, locked }) {
   const now = date ? new Date(date) : new Date();
   const chinaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   const d = chinaTime.toISOString().replace('T', ' ').slice(0, 19);
-  return `---\ntitle: "${title || '无标题'}"\ndate: ${d}\ncategories: ${category || '生活'}\n---\n\n`;
+  const lines = [`---`, `title: "${title || '无标题'}"`, `date: ${d}`, `categories: ${category || '生活'}`];
+  if (featured) lines.push('featured: true');
+  if (locked) lines.push('locked: true');
+  lines.push('---', '');
+  return lines.join('\n') + '\n';
 }
 
 function makeFilename(title, date) {
@@ -111,7 +117,7 @@ export async function onRequest(context) {
       const url = new URL(request.url);
       const filePath = url.searchParams.get('path');
       if (filePath) return await getSingle(env, filePath);
-      return await listAll(env);
+      return await listAll(env, request);
     }
     if (method === 'POST') return await create(env, request);
     if (method === 'PUT') return await update(env, request);
@@ -123,7 +129,60 @@ export async function onRequest(context) {
 }
 
 // ========== GET 列表 ==========
-async function listAll(env) {
+// 并发获取文件内容（限制并发数，避免串行逐个请求导致慢）
+async function fetchAllConcurrent(env, dir, files, hidden) {
+  const CONCURRENCY = 5;
+  const result = [];
+  const mdFiles = files.filter(f => f.name.endsWith('.md'));
+  let idx = 0;
+
+  async function worker() {
+    while (idx < mdFiles.length) {
+      const i = idx++;
+      const f = mdFiles[i];
+      try {
+        const data = await gh(env, 'GET', `${dir}/${f.name}`);
+        const md = fromB64(data.content);
+        const { meta } = parseFrontmatter(md);
+        result.push({
+          path: `${dir}/${f.name}`,
+          title: meta.title || f.name.replace('.md', ''),
+          category: meta.categories || '生活',
+          date: meta.date || '',
+          hidden,
+          featured: !!meta.featured,
+          locked: !!meta.locked,
+        });
+      } catch {}
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, mdFiles.length) }, () => worker());
+  await Promise.all(workers);
+  return result;
+}
+
+// 缓存键（与 listAll 一致）
+const LIST_CACHE_KEY = 'https://admin.zvi.onl/api/posts-list-v2';
+
+async function invalidateCache() {
+  try {
+    const cache = caches.default;
+    await cache.delete(LIST_CACHE_KEY);
+  } catch {}
+}
+
+async function listAll(env, request) {
+  // 使用 Cloudflare Cache API 缓存列表 60 秒，避免每次刷新都慢
+  const cacheKey = LIST_CACHE_KEY;
+  try {
+    const cache = caches.default;
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      return json({ posts: JSON.parse(await cached.text()) });
+    }
+  } catch {}
+
   const [posts, hidden] = await Promise.allSettled([
     listDir(env, POSTS_DIR),
     listDir(env, HIDDEN_DIR),
@@ -131,44 +190,23 @@ async function listAll(env) {
 
   const result = [];
 
-  // 目录列表 API 不返回 content，需要逐个获取文件内容
+  // 并发获取文件内容（避免串行逐个请求导致慢）
   if (posts.status === 'fulfilled') {
-    for (const f of posts.value) {
-      if (!f.name.endsWith('.md')) continue;
-      try {
-        const data = await gh(env, 'GET', `${POSTS_DIR}/${f.name}`);
-        const md = fromB64(data.content);
-        const { meta } = parseFrontmatter(md);
-        result.push({
-          path: `${POSTS_DIR}/${f.name}`,
-          title: meta.title || f.name.replace('.md', ''),
-          category: meta.categories || '生活',
-          date: meta.date || '',
-          hidden: false,
-        });
-      } catch {}
-    }
+    result.push(...await fetchAllConcurrent(env, POSTS_DIR, posts.value, false));
   }
 
   if (hidden.status === 'fulfilled') {
-    for (const f of hidden.value) {
-      if (!f.name.endsWith('.md')) continue;
-      try {
-        const data = await gh(env, 'GET', `${HIDDEN_DIR}/${f.name}`);
-        const md = fromB64(data.content);
-        const { meta } = parseFrontmatter(md);
-        result.push({
-          path: `${HIDDEN_DIR}/${f.name}`,
-          title: meta.title || f.name.replace('.md', ''),
-          category: meta.categories || '生活',
-          date: meta.date || '',
-          hidden: true,
-        });
-      } catch {}
-    }
+    result.push(...await fetchAllConcurrent(env, HIDDEN_DIR, hidden.value, true));
   }
 
   result.sort((a, b) => b.date.localeCompare(a.date));
+
+  // 写入缓存 60 秒
+  try {
+    const cache = caches.default;
+    await cache.put(cacheKey, new Response(JSON.stringify(result), { headers: { 'Cache-Control': 'max-age=60' } }));
+  } catch {}
+
   return json({ posts: result });
 }
 
@@ -182,6 +220,8 @@ async function getSingle(env, filePath) {
     category: meta.categories || '生活',
     tags: meta.tags || [],
     date: meta.date || '',
+    featured: !!meta.featured,
+    locked: !!meta.locked,
     content,
   });
 }
@@ -211,30 +251,65 @@ async function create(env, request) {
       sha: current.sha,
     });
 
+    await invalidateCache();
     return json({ success: true, path: postsPath });
   }
 
   // 正常创建新文章
-  const { title, category, content } = body;
+  const { title, category, content, featured, locked } = body;
   const filename = makeFilename(title);
   const fullPath = `${POSTS_DIR}/${filename}`;
-  const fileContent = buildFrontmatter({ title, category }) + (content || '');
+  const fileContent = buildFrontmatter({ title, category, featured, locked }) + (content || '');
 
   await gh(env, 'PUT', fullPath, {
     message: `[blog-admin] 新建文章: ${title}`,
     content: b64(fileContent),
   });
 
+  await invalidateCache();
   return json({ success: true, path: fullPath });
 }
 
 // ========== PUT 更新 ==========
 async function update(env, request) {
-  const { path: filePath, title, category, content } = await request.json();
+  const body = await request.json();
+  const { path: filePath } = body;
 
-  // 获取当前文件 SHA
+  // 获取当前文件 SHA 和 frontmatter
   const current = await gh(env, 'GET', filePath);
-  const fileContent = buildFrontmatter({ title, category }) + (content || '');
+  const md = fromB64(current.content);
+  const { meta, content: rawContent } = parseFrontmatter(md);
+
+  // toggle 模式：只切换 featured / locked 开关，不改内容
+  if (body.toggle) {
+    const field = body.field; // 'featured' | 'locked'
+    if (field !== 'featured' && field !== 'locked') return json({ error: '无效的 toggle 字段' }, 400);
+    const currentVal = !!meta[field];
+    const fileContent = buildFrontmatter({
+      title: meta.title,
+      date: meta.date,
+      category: meta.categories,
+      featured: field === 'featured' ? !currentVal : meta.featured,
+      locked: field === 'locked' ? !currentVal : meta.locked,
+    }) + (rawContent || '');
+
+    await gh(env, 'PUT', filePath, {
+      message: `[blog-admin] ${field === 'featured' ? '切换精选' : '切换加密'}: ${meta.title || filePath}`,
+      content: b64(fileContent),
+      sha: current.sha,
+    });
+    await invalidateCache();
+    return json({ success: true, featured: field === 'featured' ? !currentVal : !!meta.featured, locked: field === 'locked' ? !currentVal : !!meta.locked });
+  }
+
+  // 常规更新（保留原有 featured/locked 状态）
+  const { title, category, content, featured, locked } = body;
+  const fileContent = buildFrontmatter({
+    title,
+    category,
+    featured: featured !== undefined ? featured : meta.featured,
+    locked: locked !== undefined ? locked : meta.locked,
+  }) + (content || '');
 
   await gh(env, 'PUT', filePath, {
     message: `[blog-admin] 更新文章: ${title}`,
@@ -242,6 +317,7 @@ async function update(env, request) {
     sha: current.sha,
   });
 
+  await invalidateCache();
   return json({ success: true });
 }
 
@@ -266,5 +342,6 @@ async function softDelete(env, request) {
     sha: current.sha,
   });
 
+  await invalidateCache();
   return json({ success: true });
 }

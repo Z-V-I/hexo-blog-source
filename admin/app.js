@@ -200,9 +200,9 @@ window.addEventListener('hashchange', () => {
 
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
-  // 注册 PWA Service Worker
+  // 注册 PWA Service Worker（updateViaCache: none 确保每次刷新都检查新版本）
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
   }
   // 主题切换
   const themeSwitch = document.getElementById('admin-theme-switch');
@@ -216,10 +216,50 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('admin_theme', v);
     });
   }
+  // 全屏切换按钮（进入/退出浏览器全屏）
+  const fsEnter = document.getElementById('btn-fs-enter');
+  const fsExit = document.getElementById('btn-fs-exit');
+  if (fsEnter && fsExit) {
+    const requestFS = () => {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    };
+    const exitFS = () => {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+    };
+    const updateFSBtns = () => {
+      const fs = document.fullscreenElement || document.webkitFullscreenElement ||
+        document.mozFullScreenElement || document.msFullscreenElement;
+      fsEnter.style.display = fs ? 'none' : '';
+      fsExit.style.display = fs ? '' : 'none';
+    };
+    fsEnter.addEventListener('click', requestFS);
+    fsExit.addEventListener('click', exitFS);
+    document.addEventListener('fullscreenchange', updateFSBtns);
+    document.addEventListener('webkitfullscreenchange', updateFSBtns);
+    document.addEventListener('mozfullscreenchange', updateFSBtns);
+    document.addEventListener('MSFullscreenChange', updateFSBtns);
+  }
   generateCaptcha();
   const hash = window.location.hash.slice(1);
   if (state.token) {
-    api('/api/auth', { method: 'GET' }).then(() => navigate(hash || 'dashboard')).catch(() => { logout(); navigate('login'); });
+    api('/api/auth', { method: 'GET' }).then(() => {
+      // 正确解析初始 hash（含 edit?file=xxx）
+      const [h, qs] = hash.split('?');
+      if (h === 'edit') {
+        const file = new URLSearchParams(qs || '').get('file');
+        if (file) navigate('edit', { file });
+        else navigate('dashboard');
+      } else {
+        navigate(h || 'dashboard');
+      }
+    }).catch(() => { logout(); navigate('login'); });
   } else { navigate('login'); }
   bindEvents();
 });
@@ -248,16 +288,25 @@ function bindEvents() {
       const parent = tab.parentElement.parentElement;
       const pv = parent.querySelector('.preview-box');
       const sc = parent.querySelector('.source-box');
+      const tb = parent.querySelector('.preview-toolbar');
       // 从预览切到源码时：把预览区编辑后的 HTML 转回 Markdown，避免内容丢失
       if (sc && pv && type.includes('source') && !pv.classList.contains('hidden') && pv.innerHTML) {
         sc.value = htmlToMarkdown(pv.innerHTML);
       }
       if (pv) pv.classList.toggle('hidden', !type.includes('preview'));
       if (sc) sc.classList.toggle('hidden', !type.includes('source'));
+      // 图片工具栏：仅在预览 tab 且已有内容时显示
+      if (tb) tb.style.display = type.includes('preview') && pv && pv.innerHTML ? 'flex' : 'none';
     });
   });
   document.getElementById('form-new').addEventListener('submit', handlePublish);
   document.getElementById('form-edit').addEventListener('submit', handleEditSave);
+
+  // 图片上传
+  document.getElementById('btn-insert-image').addEventListener('click', () => document.getElementById('image-input').click());
+  document.getElementById('btn-edit-insert-image').addEventListener('click', () => document.getElementById('edit-image-input').click());
+  document.getElementById('image-input').addEventListener('change', (e) => handleImageSelect(e, 'new'));
+  document.getElementById('edit-image-input').addEventListener('change', (e) => handleImageSelect(e, 'edit'));
   document.getElementById('btn-delete-post').addEventListener('click', () => {
     showModal('隐藏后不会在博客显示，确定？', async () => {
       try { await api('/api/posts', { method: 'DELETE', body: JSON.stringify({ path: state.editFilePath }) }); toast('已隐藏', 'success'); navigate('dashboard'); } catch (e) { toast(e.message, 'error'); }
@@ -312,7 +361,9 @@ function renderMarkdown(md) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function inline(s) {
+    // 先处理图片（避免被转义），再处理其他行内元素
     return esc(s)
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px">')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
@@ -406,6 +457,12 @@ function inlineToMarkdown(node) {
     else if (tag === 'em' || tag === 'i') out += '*' + inner() + '*';
     else if (tag === 'code') out += '`' + child.textContent.trim() + '`';
     else if (tag === 'a') out += '[' + inner() + '](' + (child.getAttribute('href') || '') + ')';
+    else if (tag === 'img') {
+      // 优先用 data-md（博客引用地址），否则用 src
+      const md = child.getAttribute('data-md') || child.getAttribute('src') || '';
+      const alt = child.getAttribute('alt') || '';
+      out += `![${alt}](${md})`;
+    }
     else if (tag === 'br') out += '\n';
     else out += inner();
   });
@@ -495,6 +552,7 @@ async function handleConvert(mode) {
       document.querySelector('#preview-tabs .tab[data-tab="source"]').classList.remove('active');
       document.getElementById('preview-content').classList.remove('hidden');
       document.getElementById('source-content').classList.add('hidden');
+      document.getElementById('preview-toolbar').style.display = 'flex';
       if (!document.getElementById('new-title').value && data.title) document.getElementById('new-title').value = data.title;
     } else {
       // 编辑模式：显示预览 + 源码
@@ -505,8 +563,9 @@ async function handleConvert(mode) {
       document.querySelector('#edit-preview-tabs .tab[data-tab="edit-source"]').classList.remove('active');
       document.getElementById('edit-preview-content').classList.remove('hidden');
       document.getElementById('edit-source-content').classList.add('hidden');
+      document.getElementById('edit-preview-toolbar').style.display = 'flex';
     }
-    statusEl.textContent = '完成 ✓（预览可直接点击编辑文字）'; statusEl.className = 'status-msg success';
+    statusEl.textContent = '完成 ✓（预览可直接点击编辑文字，可插入图片）'; statusEl.className = 'status-msg success';
   } catch (err) { statusEl.textContent = '失败: ' + err.message; statusEl.className = 'status-msg error'; }
 }
 
@@ -558,6 +617,14 @@ async function loadPosts() {
     document.getElementById('stat-life').textContent = all.filter(p => p.category === '生活').length;
     document.getElementById('stat-research').textContent = all.filter(p => p.category === '研究').length;
     renderPostList();
+    // 显示上次同步时间
+    const syncEl = document.getElementById('sync-time');
+    if (syncEl) {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      syncEl.textContent = `上次同步 ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      syncEl.classList.add('show');
+    }
   } catch (err) { document.getElementById('post-list').innerHTML = `<div class="empty-state">加载失败: ${err.message}</div>`; }
 }
 
@@ -568,15 +635,26 @@ function renderPostList() {
   const catMap = {'项目':'project','生活':'life','研究':'research'};
   document.getElementById('post-list').innerHTML = list.length === 0
     ? '<div class="empty-state">暂无文章</div>'
-    : list.map(p => `<div class="post-item">
+    : list.map(p => {
+        const tags = [];
+        if (p.featured) tags.push('<span class="post-tag tag-featured"><i class="fa-solid fa-star"></i> 精选</span>');
+        if (p.locked) tags.push('<span class="post-tag tag-locked"><i class="fa-solid fa-lock"></i> 加密</span>');
+        return `<div class="post-item">
       <span class="post-item-cat cat-${p.hidden?'hidden':(catMap[p.category]||'life')}">${p.hidden?'已隐藏':(p.category||'生活')}</span>
-      <div class="post-item-main"><div class="post-item-title ${p.hidden?'hidden-title':''}">${p.hidden?'[已隐藏] ':''}${esc(p.title)}</div><div class="post-item-meta">${p.date||''}</div></div>
+      <div class="post-item-main"><div class="post-item-title ${p.hidden?'hidden-title':''}">${p.hidden?'[已隐藏] ':''}${esc(p.title)} ${tags.join(' ')}</div><div class="post-item-meta">${p.date||''}</div></div>
       <div class="post-item-actions">
         <button class="btn-text" onclick="editPost('${p.path}')">编辑</button>
+        ${p.featured
+          ? `<button class="btn-text" style="color:#e8b84b" onclick="togglePost('${p.path}','featured')">取消精选</button>`
+          : `<button class="btn-text" style="color:#e8b84b" onclick="togglePost('${p.path}','featured')">精选</button>`}
+        ${p.locked
+          ? `<button class="btn-text" style="color:#8E8E93" onclick="togglePost('${p.path}','locked')">取消加密</button>`
+          : `<button class="btn-text" style="color:#8E8E93" onclick="togglePost('${p.path}','locked')">加密</button>`}
         ${p.hidden
           ? `<button class="btn-text" style="color:#34C759" onclick="restorePost('${p.path}')">恢复</button>`
           : `<button class="btn-text" style="color:#FF3B30" onclick="hidePost('${p.path}')">隐藏</button>`}
-      </div></div>`).join('');
+      </div></div>`;
+      }).join('');
 }
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -597,6 +675,24 @@ async function loadEditPost(fp) {
     document.getElementById('form-edit').classList.remove('hidden');
     document.querySelector(`input[name="edit-category"][value="${data.category||'生活'}"]`).checked = true;
     document.getElementById('edit-title').value = data.title || '';
+    // 默认加载已有内容到预览（便于直接改字保存）；加密文章在后台同样显示预览
+    if (data.content) {
+      const epv = document.getElementById('edit-preview-content');
+      const esc = document.getElementById('edit-source-content');
+      const tabs = document.getElementById('edit-preview-tabs');
+      const toolbar = document.getElementById('edit-preview-toolbar');
+      // 关键：预览所在区块默认 display:none，必须显示出来
+      document.getElementById('edit-convert-section').style.display = 'block';
+      esc.value = data.content;
+      epv.innerHTML = renderMarkdown(data.content);
+      // 显示预览 tab
+      epv.classList.remove('hidden');
+      esc.classList.add('hidden');
+      tabs.style.display = 'flex';
+      toolbar.style.display = 'flex';
+      document.querySelector('#edit-preview-tabs .tab[data-tab="edit-preview"]').classList.add('active');
+      document.querySelector('#edit-preview-tabs .tab[data-tab="edit-source"]').classList.remove('active');
+    }
   } catch (err) { document.getElementById('edit-loading').innerHTML = `<div class="empty-state">加载失败: ${err.message}</div>`; }
 }
 
@@ -610,6 +706,103 @@ async function restorePost(fp) {
   showModal('确定恢复这篇文章到博客？', async () => {
     try { await api('/api/posts', { method: 'POST', body: JSON.stringify({ restore: true, path: fp }) }); toast('已恢复', 'success'); loadPosts(); } catch (err) { toast(err.message, 'error'); }
   });
+}
+
+async function togglePost(fp, field) {
+  const label = field === 'featured' ? '精选' : '加密';
+  try {
+    await api('/api/posts', { method: 'PUT', body: JSON.stringify({ toggle: true, field, path: fp }) });
+    toast(`已切换${label}`, 'success'); loadPosts();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ========== 图片上传（压缩 + 插入光标处） ==========
+async function handleImageSelect(e, mode) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  if (!file.type.startsWith('image/')) { toast('请选择图片文件', 'error'); return; }
+  const isNew = mode === 'new';
+  const toastMsg = toast;
+  toastMsg('压缩中...', 'info');
+  try {
+    // 1. 压缩图片（canvas → WebP 1280px q75）
+    let compressed = await compressImage(file);
+    if (compressed.size > 200 * 1024) {
+      // 超过200KB，降质量到60再压一次
+      compressed = await compressImage(file, 60);
+    }
+    // 2. 上传到 GitHub
+    toastMsg('上传中...', 'info');
+    const data = await api('/api/upload', {
+      method: 'POST',
+      body: JSON.stringify({ filename: file.name.replace(/\.[^.]+$/, '') + '.webp', dataUrl: compressed.dataUrl }),
+    });
+    // 3. 插入光标位置
+    const pv = document.getElementById(isNew ? 'preview-content' : 'edit-preview-content');
+    const alt = file.name.replace(/\.[^.]+$/, '');
+    const mdTag = `\n\n![${alt}](${data.url})\n`;
+    // 预览用 base64 dataUrl（立即显示），md 引用用 /images/（博客构建后生效）
+    insertAtCursor(pv, mdTag, compressed.dataUrl, data.url, alt);
+    toastMsg('图片已插入 ✓（博客部署后生效）', 'success');
+  } catch (err) {
+    toastMsg('图片上传失败: ' + err.message, 'error');
+  }
+}
+
+async function compressImage(file, quality = 75) {
+  const MAX_W = 1280;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        let w = img.width, h = img.height;
+        if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // 优先 WebP，不支持则 JPEG
+        let mime = 'image/webp';
+        if (!canvas.toDataURL('image/webp').startsWith('data:image/webp')) mime = 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mime, quality / 100);
+        // 估算大小
+        const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4);
+        URL.revokeObjectURL(url);
+        resolve({ dataUrl, size: bytes, mime });
+      } catch (err) { URL.revokeObjectURL(url); reject(err); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片解析失败')); };
+    img.src = url;
+  });
+}
+
+function insertAtCursor(pv, mdTag, previewUrl, mdUrl, alt) {
+  // 插入 markdown 到源码 + 预览区显示图片（预览用 base64，md 引用用 /images/）
+  const sc = document.getElementById(pv.id === 'preview-content' ? 'source-content' : 'edit-source-content');
+  // 预览区显示图片，data-md 记录博客引用地址供 htmlToMarkdown 使用
+  const imgEl = document.createElement('p');
+  imgEl.innerHTML = `<img src="${previewUrl}" data-md="${mdUrl}" alt="${alt}" style="max-width:100%;border-radius:8px">`;
+  // 尝试在光标处插入
+  try {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && pv.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(imgEl);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      pv.appendChild(imgEl);
+    }
+  } catch {
+    pv.appendChild(imgEl);
+  }
+  // 同步到源码 textarea（追加到当前 markdown 末尾，或按现有内容 append）
+  if (sc) sc.value = (sc.value ? sc.value + '\n' : '') + mdTag.trim() + '\n';
+  pv.focus();
 }
 
 function resetNewForm() {
@@ -643,3 +836,4 @@ document.getElementById('modal-confirm').addEventListener('click', () => { if (m
 window.editPost = editPost;
 window.hidePost = hidePost;
 window.restorePost = restorePost;
+window.togglePost = togglePost;

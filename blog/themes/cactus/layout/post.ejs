@@ -2,6 +2,8 @@
   <a class="post-back" href="<%- url_for('/') %>"><i class="fa-solid fa-arrow-left"></i> 返回首页</a>
   <header>
     <%- partial('_partial/post/title', { post: page, index: false, class_name: 'posttitle' }) %>
+    <% if (page.featured) { %><i class="fa-solid fa-star featured-icon" title="精选"></i><% } %>
+    <% if (page.locked) { %><span class="locked-tag"><i class="fa-solid fa-lock"></i> 加密文章</span><% } %>
     <div class="meta">
       <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
         <span class="p-name" itemprop="name"><% if (page.author) { %><%- page.author %><% } else { %><%- config.author %><% } %></span>
@@ -13,7 +15,70 @@
   </header>
   <%- partial('_partial/post/gallery') %>
   <div class="content e-content" itemprop="articleBody">
-    <%- page.content %>
+    <% if (page.locked) { %>
+      <!-- 加密门禁（方案C）：正文不在静态页中，解锁后从后端动态获取 -->
+      <div id="post-lock-form">
+        <div class="post-lock-box">
+          <i class="fa-solid fa-lock post-lock-icon"></i>
+          <p class="post-lock-title">这篇文章已加密</p>
+          <p class="post-lock-hint">请输入密码查看内容</p>
+          <div class="post-lock-input-row">
+            <input type="password" id="post-lock-input" placeholder="请输入密码" autocomplete="off">
+            <button type="button" id="post-lock-btn">解锁</button>
+          </div>
+          <p class="post-lock-msg" id="post-lock-msg"></p>
+        </div>
+      </div>
+      <div id="post-lock-content" style="display:none"></div>
+      <script>
+      (function(){
+        var input = document.getElementById('post-lock-input');
+        var btn = document.getElementById('post-lock-btn');
+        var msg = document.getElementById('post-lock-msg');
+        var content = document.getElementById('post-lock-content');
+        var form = document.getElementById('post-lock-form');
+        // 文章源文件路径（构建时注入），用于后端读取
+        var POST_PATH = '<%= page.source %>';
+        if (POST_PATH.indexOf('_posts/') === 0) POST_PATH = 'blog/source/' + POST_PATH;
+        else POST_PATH = 'blog/source/_posts/' + POST_PATH.split('/').pop();
+        var API_BASE = '<%= theme.admin_url || "" %>';
+        function unlock() {
+          msg.textContent = '解锁中...';
+          msg.style.color = '';
+          fetch(API_BASE + '/api/post-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: POST_PATH, password: input.value })
+          })
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (data.success && data.token) {
+              return fetch(API_BASE + '/api/post-content?path=' + encodeURIComponent(POST_PATH) + '&token=' + encodeURIComponent(data.token), { method: 'GET' }).then(function(r){ return r.json(); });
+            }
+            throw new Error(data.error || '解锁失败');
+          })
+          .then(function(data){
+            if (data.success) {
+              form.style.display = 'none';
+              content.innerHTML = data.html;
+              content.style.display = '';
+            } else {
+              msg.textContent = data.error || '加载失败';
+              msg.style.color = '#e74c3c';
+            }
+          })
+          .catch(function(err){
+            msg.textContent = err.message || '密码错误';
+            msg.style.color = '#e74c3c';
+          });
+        }
+        btn.addEventListener('click', unlock);
+        input.addEventListener('keydown', function(e){ if (e.key === 'Enter') unlock(); });
+      })();
+      </script>
+    <% } else { %>
+      <%- page.content %>
+    <% } %>
   </div>
 </article>
 <%- partial('_partial/comments') %>

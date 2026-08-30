@@ -1,0 +1,32 @@
+<!-- ========== 精选独立页面 ========== -->
+<%
+  var catClassMap = { '项目':'cat-project', '生活':'cat-life', '研究':'cat-research' }
+  function catOf(post) {
+    if (post.categories && post.categories.length) {
+      return String(post.categories.data[0].name || post.categories.data[0])
+    }
+    return '生活'
+  }
+  var featuredPosts = site.posts.filter(function(p){ return p.featured; }).sort('date', 'desc').toArray()
+%>
+<section id="featured-page">
+  <span class="h1"><i class="fa-solid fa-star cat-icon"></i> 精选</span>
+  <% if (featuredPosts.length > 0) { %>
+  <ul class="post-list">
+    <% featuredPosts.forEach(function(post) { %>
+      <li class="post-item">
+        <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
+        <span>
+          <%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %>
+          <i class="fa-solid fa-star featured-icon" title="精选"></i>
+          <% if (post.locked) { %><i class="fa-solid fa-lock post-lock" title="加密文章"></i><% } %>
+          <% var fc = catOf(post) %>
+          <span class="cat-tag <%= catClassMap[fc] || 'cat-life' %>"><%= fc %></span>
+        </span>
+      </li>
+    <% }) %>
+  </ul>
+  <% } else { %>
+  <p class="no-posts">暂无精选文章</p>
+  <% } %>
+</section>

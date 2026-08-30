@@ -12,7 +12,11 @@
       <% } %>
       <li class="post-item">
         <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
-        <span><%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %></span>
+        <span>
+          <%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %>
+          <% if (post.featured) { %><i class="fa-solid fa-star featured-icon" title="精选"></i><% } %>
+          <% if (post.locked) { %><i class="fa-solid fa-lock post-lock" title="加密文章"></i><% } %>
+        </span>
       </li>
     <% }); %>
   </ul>

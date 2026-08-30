@@ -86,6 +86,10 @@
           <option value="reference">紫霞</option>
           <option value="dunhuang">敦煌</option>
         </select>
+        <div class="fs-actions">
+          <button id="btn-fs-enter" class="btn-text" title="进入全屏"><i class="fa-solid fa-expand"></i> 全屏</button>
+          <button id="btn-fs-exit" class="btn-text" title="退出全屏" style="display:none"><i class="fa-solid fa-compress"></i> 退出全屏</button>
+        </div>
         <button id="btn-logout" class="btn-text"><i class="fa-solid fa-right-from-bracket"></i> 退出</button>
         <div class="admin-version">v2026.08.01.beta2</div>
       </div>
@@ -106,6 +110,7 @@
               <option value="研究">研究</option>
             </select>
             <button id="btn-refresh" class="btn-secondary">↻ 刷新</button>
+            <span id="sync-time" class="sync-time" title="最近一次从仓库同步数据的时间"></span>
             <a href="#new" class="btn-primary">＋ 新建</a>
           </div>
         </div>
@@ -164,7 +169,12 @@
               <button type="button" class="tab active" data-tab="preview">预览（点击可直接编辑文字）</button>
               <button type="button" class="tab" data-tab="source">源码</button>
             </div>
+            <div class="preview-toolbar" id="preview-toolbar" style="display:none">
+              <button type="button" class="btn-secondary btn-sm" id="btn-insert-image"><i class="fa-solid fa-image"></i> 插入图片</button>
+              <span class="preview-toolbar-hint">将光标点到想插图的位置，再点「插入图片」</span>
+            </div>
             <div id="preview-content" class="preview-box hidden" contenteditable="true"></div>
+            <input type="file" id="image-input" accept="image/*" hidden>
             <textarea id="source-content" class="source-box hidden"></textarea>
           </div>
           <div class="form-actions">
@@ -214,7 +224,12 @@
               <button type="button" class="tab active" data-tab="edit-preview">预览（点击可直接编辑文字）</button>
               <button type="button" class="tab" data-tab="edit-source">源码</button>
             </div>
+            <div class="preview-toolbar" id="edit-preview-toolbar" style="display:none">
+              <button type="button" class="btn-secondary btn-sm" id="btn-edit-insert-image"><i class="fa-solid fa-image"></i> 插入图片</button>
+              <span class="preview-toolbar-hint">将光标点到想插图的位置，再点「插入图片」</span>
+            </div>
             <div id="edit-preview-content" class="preview-box hidden" style="margin-top:0" contenteditable="true"></div>
+            <input type="file" id="edit-image-input" accept="image/*" hidden>
             <textarea id="edit-source-content" class="source-box hidden"></textarea>
           </div>
           <div class="form-actions">
@@ -263,6 +278,6 @@
       </div>
     </div>
   </div>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=20260830c"></script>
 </body>
 </html>

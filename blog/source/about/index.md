@@ -68,7 +68,7 @@ layout: page
 
 ## 联系方式
 
-- GitHub: https://github.com/your-github
+- GitHub: https://github.com/Z-V-I
 - 微信: <YOUR_WECHAT_ID>
 - QQ: <YOUR_QQ_ID>
 - 邮箱：<YOUR_ADMIN_EMAIL>
