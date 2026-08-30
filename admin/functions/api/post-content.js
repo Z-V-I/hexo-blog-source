@@ -5,7 +5,7 @@
  * GET  /api/post-content?path=xxx&token=xxx  -> 验证 token，仅当文章确实加密时返回正文 HTML
  *
  * 安全设计：
- * - 密码存于环境变量 POST_PASSWORD（不存在时默认 062524），绝不出现在前端
+ * - 密码存于环境变量 POST_PASSWORD（不存在时默认 <YOUR_POST_PASSWORD>），绝不出现在前端
  * - token 用 HMAC-SHA256 签名，绑定 path + 5 分钟过期
  * - 只对 frontmatter 含 locked: true 的文章返回正文，防止读取其他文章
  * - 接口无需登录，任何人可发起，但无密码/无效 token 无法获取内容

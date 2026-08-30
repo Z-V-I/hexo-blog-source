@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "onl.zvi.blog.app",
-    "sha256_cert_fingerprints": ["C3:AB:B4:C6:AD:49:C9:17:F6:B8:5F:23:A6:62:E7:D9:0B:8F:A5:8D:55:AF:BC:F5:5D:C6:B6:D3:91:D6:B7:12"]
+    "package_name": "com.example.blog",
+    "sha256_cert_fingerprints": ["<YOUR_SHA256_FINGERPRINT>"]
   }
 }]
